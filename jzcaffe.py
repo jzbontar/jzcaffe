@@ -16,15 +16,10 @@ def blob2np(blob):
         jz.blob_height(blob))
     return data
 
-import time
 if __name__ == '__main__':
-    input = jz.blob(2,3,4,5)
+    input = jz.blob_new(2,3,4,5)
 
-    net1 = jz.inner_product(input, 10)
-
-    for i in range(10000000):
-        jz.layer_forward(net1)
-
-
+    net1 = jz.inner_product_new(input, 10)
+    jz.layer_forward(net1)
     jz.layer_free(net1)
     jz.blob_free(input)

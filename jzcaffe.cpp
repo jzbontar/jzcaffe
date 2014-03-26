@@ -2,7 +2,7 @@
 #include "caffe/caffe.hpp"
 
 /*** Blob ***/
-extern "C" caffe::Blob<float> *blob(int num, int channels, int height, int width)
+extern "C" caffe::Blob<float> *blob_new(int num, int channels, int height, int width)
 {
 	caffe::Blob<float> *blob = new caffe::Blob<float>(num, channels, height, width);
 	return blob;
@@ -57,7 +57,7 @@ extern "C" void layer_free(Layer *layer)
 }
 
 /*** Inner Product Layer ***/
-extern "C" Layer *inner_product(caffe::Blob<float> *bottom, int num_output)
+extern "C" Layer *inner_product_new(caffe::Blob<float> *bottom, int num_output)
 {
 	Layer *layer = new Layer();
 	caffe::Blob<float>* top = new caffe::Blob<float>();
