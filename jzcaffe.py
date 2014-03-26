@@ -17,23 +17,35 @@ def blob2np(blob):
         jz.blob_height(blob))
     return data
 
+class Sequential:
+    def __init__(self, input):
+        self.input = input
+        self.layers = []
+
+    def add(self, layer, *args):
+        input = jz.layer_top(self.layers[-1], 0) if self.layers else self.input
+        self.layers.append(layer(input, *args))
+
+    def forward(self):
+        for layer in self.layers:
+            jz.layer_forward(layer)
+    
+    def backward(self):
+        for layer in self.layers:
+            jz.layer_backward(layer, 1)
+    
+    def update_parameters(self, learning_rate):
+        for layer in self.layers:
+            jz.layer_update_parameters(layer, learning_rate)
+    
+
 if __name__ == '__main__':
-    input = jz.blob_new(128,3,100,100)
-    labels = jz.blob_new(128,1,1,1)
+    input = jz.blob(128,3,100,100)
+    labels = jz.blob(128,1,1,1)
 
-    net1 = jz.inner_product_layer_new(input, 10)
-    net2 = jz.tanh_layer_new(jz.layer_top(net1, 0))
-    net3 = jz.softmax_with_loss_layer_new(jz.layer_top(net2, 0), labels)
+    net = Sequential(input)
+    net.add(jz.inner_product_layer,  10)
+    net.add(jz.tanh_layer)
+    net.add(jz.softmax_with_loss_layer, labels)
 
-    jz.layer_forward(net1)
-    jz.layer_forward(net2)
-    jz.layer_forward(net3)
-
-    jz.layer_backward(net3, 1)
-    jz.layer_backward(net2, 1)
-    jz.layer_backward(net1, 0)
-
-    jz.layer_update_parameters(net3, 0.1)
-    jz.layer_update_parameters(net2, 0.1)
-    jz.layer_update_parameters(net1, 0.1)
-
+    net.forward()
