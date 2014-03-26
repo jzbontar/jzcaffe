@@ -32,8 +32,8 @@ extern "C" float *blob_cpu_data(caffe::Blob<float> *blob) { return blob->mutable
 
 /*** Layer ***/
 struct Layer {
-	vector<struct caffe::Blob<float>*> bottom;
-	vector<struct caffe::Blob<float>*> top;
+	vector<caffe::Blob<float>*> bottom;
+	vector<caffe::Blob<float>*> top;
 	caffe::Layer<float>* layer;
 };
 
@@ -46,19 +46,22 @@ Layer *layer_new(caffe::Layer<float>* caffe_layer, caffe::Blob<float> *bottom)
 	layer->top.push_back(top);
 
 	layer->layer = caffe_layer;
-	caffe_layer->SetUp(layer->bottom, &(layer->top));
+	layer->layer->SetUp(layer->bottom, &(layer->top));
 
 	return layer;
 }
 
+extern "C" caffe::Blob<float> *layer_bottom(Layer *layer, int i) { return layer->bottom[i]; }
+extern "C" caffe::Blob<float> *layer_top(Layer *layer, int i) { return layer->top[i]; }
+
 extern "C" void layer_forward(Layer *layer)
 {
-	layer->layer->Forward(layer->bottom, &(layer->top));
+	layer->layer->Forward(layer->bottom, &layer->top);
 }
 
 extern "C" void layer_backward(Layer *layer, bool propagate_down)
 {
-	layer->layer->Backward(layer->bottom, propagate_down, &(layer->top));
+	layer->layer->Backward(layer->top, propagate_down, &layer->bottom);
 }
 
 extern "C" void layer_free(Layer *layer)
@@ -83,4 +86,19 @@ extern "C" Layer *tanh_layer_new(caffe::Blob<float> *bottom)
 {
 	caffe::LayerParameter layer_param;
 	return layer_new(new caffe::TanHLayer<float>(layer_param), bottom);
+}
+
+/*** Softmax Loss ***/
+extern "C" Layer *softmax_with_loss_layer_new(caffe::Blob<float> *prediction, caffe::Blob<float> *target)
+{
+	Layer *layer = new Layer();
+
+	layer->bottom.push_back(prediction);
+	layer->bottom.push_back(target);
+
+	caffe::LayerParameter layer_param;
+	layer->layer = new caffe::SoftmaxWithLossLayer<float>(layer_param);
+	layer->layer->SetUp(layer->bottom, &(layer->top));
+
+	return layer;
 }

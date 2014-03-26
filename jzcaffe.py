@@ -17,9 +17,19 @@ def blob2np(blob):
     return data
 
 if __name__ == '__main__':
-    input = jz.blob_new(2,3,4,5)
+    input = jz.blob_new(128,1,28,28)
+    labels = jz.blob_new(128,1,1,1)
 
-    net1 = jz.inner_product_new(input, 10)
-    jz.layer_forward(net1)
-    jz.layer_free(net1)
-    jz.blob_free(input)
+    net1 = jz.inner_product_layer_new(input, 10)
+    net2 = jz.tanh_layer_new(jz.layer_top(net1, 0))
+    net3 = jz.softmax_with_loss_layer_new(jz.layer_top(net2, 0), labels)
+
+    for i in range(50000):
+        jz.layer_forward(net1)
+        jz.layer_forward(net2)
+        jz.layer_forward(net3)
+
+        jz.layer_backward(net3, 1)
+        jz.layer_backward(net2, 1)
+        jz.layer_backward(net1, 0)
+
