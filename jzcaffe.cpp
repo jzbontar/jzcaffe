@@ -37,6 +37,20 @@ struct Layer {
 	caffe::Layer<float>* layer;
 };
 
+Layer *layer_new(caffe::Layer<float>* caffe_layer, caffe::Blob<float> *bottom)
+{
+	Layer *layer = new Layer();
+	caffe::Blob<float>* top = new caffe::Blob<float>();
+
+	layer->bottom.push_back(bottom);
+	layer->top.push_back(top);
+
+	layer->layer = caffe_layer;
+	caffe_layer->SetUp(layer->bottom, &(layer->top));
+
+	return layer;
+}
+
 extern "C" void layer_forward(Layer *layer)
 {
 	layer->layer->Forward(layer->bottom, &(layer->top));
@@ -57,19 +71,16 @@ extern "C" void layer_free(Layer *layer)
 }
 
 /*** Inner Product Layer ***/
-extern "C" Layer *inner_product_new(caffe::Blob<float> *bottom, int num_output)
+extern "C" Layer *inner_product_layer_new(caffe::Blob<float> *bottom, int num_output)
 {
-	Layer *layer = new Layer();
-	caffe::Blob<float>* top = new caffe::Blob<float>();
-
-	layer->bottom.push_back(bottom);
-	layer->top.push_back(top);
-
 	caffe::LayerParameter layer_param;
 	layer_param.set_num_output(num_output);
+	return layer_new(new caffe::InnerProductLayer<float>(layer_param), bottom);
+}
 
-	layer->layer = new caffe::InnerProductLayer<float>(layer_param);
-	layer->layer->SetUp(layer->bottom, &(layer->top));
-
-	return layer;
+/*** Tanh ***/
+extern "C" Layer *tanh_layer_new(caffe::Blob<float> *bottom)
+{
+	caffe::LayerParameter layer_param;
+	return layer_new(new caffe::TanHLayer<float>(layer_param), bottom);
 }
