@@ -3,7 +3,7 @@
 #include "caffe/util/math_functions.hpp"
 
 /*** Blob ***/
-extern "C" caffe::Blob<float> *blob_new(int num, int channels, int height, int width)
+extern "C" caffe::Blob<float> *blob(int num, int channels, int height, int width)
 {
 	caffe::Blob<float> *blob = new caffe::Blob<float>(num, channels, height, width);
 	return blob;
@@ -38,7 +38,7 @@ struct Layer {
 	caffe::Layer<float>* layer;
 };
 
-Layer *layer_new(caffe::Layer<float>* caffe_layer, caffe::Blob<float> *bottom)
+Layer *layer(caffe::Layer<float>* caffe_layer, caffe::Blob<float> *bottom)
 {
 	Layer *layer = new Layer();
 	caffe::Blob<float>* top = new caffe::Blob<float>();
@@ -91,32 +91,32 @@ extern "C" void layer_update_parameters(Layer *layer, float learning_rate)
 }
 
 /*** Inner Product Layer ***/
-extern "C" Layer *inner_product_layer_new(caffe::Blob<float> *bottom, int num_output)
+extern "C" Layer *inner_product_layer(caffe::Blob<float> *bottom, int num_output)
 {
 	caffe::LayerParameter layer_param;
 	layer_param.set_num_output(num_output);
-	return layer_new(new caffe::InnerProductLayer<float>(layer_param), bottom);
+	return layer(new caffe::InnerProductLayer<float>(layer_param), bottom);
 }
 
 /*** Conv Layer ***/
-extern "C" Layer *conv_layer_new(caffe::Blob<float> *bottom, int num_output, int kernel_size, int stride)
+extern "C" Layer *conv_layer(caffe::Blob<float> *bottom, int num_output, int kernel_size, int stride)
 {
 	caffe::LayerParameter layer_param;
 	layer_param.set_num_output(num_output);
 	layer_param.set_kernelsize(kernel_size);
 	layer_param.set_stride(stride);
-	return layer_new(new caffe::InnerProductLayer<float>(layer_param), bottom);
+	return layer(new caffe::InnerProductLayer<float>(layer_param), bottom);
 }
 
 /*** Tanh ***/
-extern "C" Layer *tanh_layer_new(caffe::Blob<float> *bottom)
+extern "C" Layer *tanh_layer(caffe::Blob<float> *bottom)
 {
 	caffe::LayerParameter layer_param;
-	return layer_new(new caffe::TanHLayer<float>(layer_param), bottom);
+	return layer(new caffe::TanHLayer<float>(layer_param), bottom);
 }
 
 /*** Softmax Loss ***/
-extern "C" Layer *softmax_with_loss_layer_new(caffe::Blob<float> *prediction, caffe::Blob<float> *target)
+extern "C" Layer *softmax_with_loss_layer(caffe::Blob<float> *prediction, caffe::Blob<float> *target)
 {
 	Layer *layer = new Layer();
 
