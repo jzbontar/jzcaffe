@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include "caffe/caffe.hpp"
+#include "caffe/util/math_functions.hpp"
 
 /*** Blob ***/
 extern "C" caffe::Blob<float> *blob_new(int num, int channels, int height, int width)
@@ -80,7 +81,11 @@ extern "C" void layer_update_parameters(Layer *layer, float learning_rate)
 		//TODO
 		break;
 	case caffe::Caffe::GPU:
-		//TODO
+		vector<boost::shared_ptr<caffe::Blob<float> > >& layer_blobs = layer->layer->blobs();
+		for (int i = 0; i < layer_blobs.size(); i++) {
+			caffe::caffe_gpu_axpy(layer_blobs[i]->count(), learning_rate,
+				layer_blobs[i]->gpu_diff(), layer_blobs[i]->mutable_gpu_data());
+		}
 		break;
 	}
 }
