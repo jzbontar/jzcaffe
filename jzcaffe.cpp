@@ -73,11 +73,33 @@ extern "C" void layer_free(Layer *layer)
 	delete layer;
 }
 
+extern "C" void layer_update_parameters(Layer *layer, float learning_rate)
+{
+	switch (caffe::Caffe::mode()) {
+	case caffe::Caffe::CPU:
+		//TODO
+		break;
+	case caffe::Caffe::GPU:
+		//TODO
+		break;
+	}
+}
+
 /*** Inner Product Layer ***/
 extern "C" Layer *inner_product_layer_new(caffe::Blob<float> *bottom, int num_output)
 {
 	caffe::LayerParameter layer_param;
 	layer_param.set_num_output(num_output);
+	return layer_new(new caffe::InnerProductLayer<float>(layer_param), bottom);
+}
+
+/*** Conv Layer ***/
+extern "C" Layer *conv_layer_new(caffe::Blob<float> *bottom, int num_output, int kernel_size, int stride)
+{
+	caffe::LayerParameter layer_param;
+	layer_param.set_num_output(num_output);
+	layer_param.set_kernelsize(kernel_size);
+	layer_param.set_stride(stride);
 	return layer_new(new caffe::InnerProductLayer<float>(layer_param), bottom);
 }
 
