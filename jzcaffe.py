@@ -3,8 +3,9 @@ import numpy as np
 
 jz = CDLL('./libjzcaffe.so')
 jz.layer_update_parameters.argtypes = [c_void_p, c_float]
-jz.blob_host2device.argtypes = [c_void_p, np.ctypeslib.ndpointer(dtype=np.float32, flags='C')]
-jz.blob_device2host.argtypes = [c_void_p, np.ctypeslib.ndpointer(dtype=np.float32, flags='C')]
+jz.blob_host2device.argtypes = [c_void_p, np.ctypeslib.ndpointer(dtype=np.float32, flags='C'), c_int]
+jz.blob_device2host.argtypes = [c_void_p, np.ctypeslib.ndpointer(dtype=np.float32, flags='C'), c_int]
+jz.layer_forward.restype = c_float
 
 class Sequential:
     def __init__(self, input):
@@ -17,10 +18,11 @@ class Sequential:
 
     def forward(self):
         for layer in self.layers:
-            jz.layer_forward(layer)
+            out = jz.layer_forward(layer)
+        return out
     
     def backward(self):
-        for layer in self.layers:
+        for layer in self.layers[::-1]:
             jz.layer_backward(layer, 1)
     
     def update_parameters(self, learning_rate):
@@ -74,7 +76,7 @@ if __name__ == '__main__':
 
         x_batch = jz.blob(batch_size, 1, 28, 28)
         y_batch = jz.blob(batch_size, 1, 1, 1)
-        net_output = np.array((batch_size, 10), dtype=np.float32)
+        net_output = np.empty((batch_size, 10), dtype=np.float32)
 
         net = Sequential(x_batch)
         net.add(jz.inner_product_layer, 800)
@@ -82,27 +84,25 @@ if __name__ == '__main__':
         net.add(jz.inner_product_layer, 10)
         net.add(jz.softmax_with_loss_layer, y_batch)
 
-
-        for epoch in range(10):
+        for epoch in range(1000):
             # train
-            #for i in range(0, 60000 - batch_size, batch_size):
-            #    jz.blob_host2device(x_batch, X[i:i + batch_size])
-            #    jz.blob_host2device(y_batch, y[i:i + batch_size])
-            #    
-            #    net.forward()
-            #    net.backward()
-            #    net.update_parameters(learning_rate)
-
-            # test
-            for i in range(60000, 70000 - batch_size, batch_size):
-                jz.blob_host2device(x_batch, X[i:i + batch_size])
+            for i in range(0, 60000 - batch_size, batch_size):
+                jz.blob_host2device(x_batch, X[i:i + batch_size], 0)
+                jz.blob_host2device(y_batch, y[i:i + batch_size], 0)
                 
+                net.forward()
+                net.backward()
+                net.update_parameters(learning_rate)
+                
+            # test
+            err = 0
+            for i in range(60000, 70000 - batch_size, batch_size):
+                jz.blob_host2device(x_batch, X[i:i + batch_size], 0)
+
                 net.forward()
 
                 out_blob = jz.layer_top(net.layers[-2], 0)
-                #jz.blob_device2host(out_blob, net_output)
+                jz.blob_device2host(out_blob, net_output, 0)
+                err += np.sum(np.argmax(net_output, axis=1) != y[i:i + batch_size])
 
-                sys.exit()
-
-
-            print epoch
+            print '{:3d} {}'.format(epoch, err)
