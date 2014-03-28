@@ -158,12 +158,18 @@ extern "C" Layer *pooling_layer(caffe::Blob<float> *bottom, char *type, int kern
 	return layer(new caffe::PoolingLayer<float>(layer_param), bottom);
 }
 
-
 /*** Tanh ***/
 extern "C" Layer *tanh_layer(caffe::Blob<float> *bottom)
 {
 	caffe::LayerParameter layer_param;
 	return layer(new caffe::TanHLayer<float>(layer_param), bottom);
+}
+
+/*** ReLU ***/
+extern "C" Layer *relu_layer(caffe::Blob<float> *bottom)
+{
+	caffe::LayerParameter layer_param;
+	return layer(new caffe::ReLULayer<float>(layer_param), bottom);
 }
 
 /*** Softmax Loss ***/
