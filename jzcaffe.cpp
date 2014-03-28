@@ -32,7 +32,7 @@ extern "C" void blob_print(caffe::Blob<float> *blob)
 
 	printf("%dx%dx%dx%d\n", blob->num(), blob->channels(), blob->height(), blob->width());
 	for (i = 0; i < blob->count() && i < 10; i++) {
-		printf("% f % f\n", i, data[i], diff[i]);
+		printf("% f % f\n", data[i], diff[i]);
 	}
 
 	if (i == 10) {
@@ -96,7 +96,7 @@ extern "C" void layer_backward(Layer *layer, bool propagate_down)
 
 extern "C" void layer_free(Layer *layer)
 {
-	for (int i = 0; i < layer->top.size(); i++) {
+	for (unsigned int i = 0; i < layer->top.size(); i++) {
 		delete layer->top[i];
 	}
 	delete layer->layer;
@@ -108,7 +108,7 @@ extern "C" void layer_update_parameters(Layer *layer, float learning_rate)
 	assert(caffe::Caffe::mode() == caffe::Caffe::GPU);
 
 	vector<boost::shared_ptr<caffe::Blob<float> > >& layer_blobs = layer->layer->blobs();
-	for (int i = 0; i < layer_blobs.size(); i++) {
+	for (unsigned int i = 0; i < layer_blobs.size(); i++) {
 		caffe::caffe_gpu_axpy(layer_blobs[i]->count(), -learning_rate,
 			layer_blobs[i]->gpu_diff(), layer_blobs[i]->mutable_gpu_data());
 	}
@@ -135,6 +135,29 @@ extern "C" Layer *conv_layer(caffe::Blob<float> *bottom, int num_output, int ker
 	layer_param.mutable_bias_filler()->set_type("constant");
 	return layer(new caffe::InnerProductLayer<float>(layer_param), bottom);
 }
+
+/*** Pooling ***/
+extern "C" Layer *pooling_layer(caffe::Blob<float> *bottom, char *type, int kernel_size, int stride)
+{
+	caffe::LayerParameter_PoolMethod itype;
+	caffe::LayerParameter layer_param;
+
+	if (strcmp(type, "max")) {
+		itype = caffe::LayerParameter_PoolMethod_MAX;
+	} else if (strcmp(type, "ave")) {
+		itype = caffe::LayerParameter_PoolMethod_AVE;
+	} else if (strcmp(type, "stochastic")) {
+		itype = caffe::LayerParameter_PoolMethod_STOCHASTIC;
+	} else {
+		assert(0);
+	}
+	layer_param.set_pool(itype);
+	layer_param.set_kernelsize(kernel_size);
+	layer_param.set_stride(stride);
+
+	return layer(new caffe::PoolingLayer<float>(layer_param), bottom);
+}
+
 
 /*** Tanh ***/
 extern "C" Layer *tanh_layer(caffe::Blob<float> *bottom)
