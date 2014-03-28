@@ -125,12 +125,13 @@ extern "C" Layer *inner_product_layer(caffe::Blob<float> *bottom, int num_output
 }
 
 /*** Convolution Layer ***/
-extern "C" Layer *convolution_layer(caffe::Blob<float> *bottom, int num_output, int kernel_size, int stride)
+extern "C" Layer *convolution_layer(caffe::Blob<float> *bottom, int num_output, int kernel_size, int stride, int pad)
 {
 	caffe::LayerParameter layer_param;
 	layer_param.set_num_output(num_output);
 	layer_param.set_kernelsize(kernel_size);
 	layer_param.set_stride(stride);
+	layer_param.set_pad(pad);
 	layer_param.mutable_weight_filler()->set_type("xavier");
 	layer_param.mutable_bias_filler()->set_type("constant");
 	return layer(new caffe::ConvolutionLayer<float>(layer_param), bottom);

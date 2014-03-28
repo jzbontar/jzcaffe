@@ -39,7 +39,7 @@ if __name__ == '__main__':
         input = jz.blob(128,3,100,100)
         labels = jz.blob(128,1,1,1)
 
-        net = jz.convolution_layer(input, 96, 11, 1)
+        net = jz.convolution_layer(input, 96, 11, 1, 0)
         jz.layer_forward(net)
         jz.layer_backward(net, True)
 
@@ -87,7 +87,7 @@ if __name__ == '__main__':
             net.add(jz.inner_product_layer, 10)
             net.add(jz.softmax_with_loss_layer, y_batch)
         elif model == 'conv':
-            learning_rate = 0.1
+            learning_rate = 0.05
             learning_rate_decay = 1
             batch_size = 64
 
@@ -95,14 +95,14 @@ if __name__ == '__main__':
             y_batch = jz.blob(batch_size, 1, 1, 1)
 
             net = Sequential(x_batch)
-            net.add(jz.convolution_layer, 20, 5, 1)
+            net.add(jz.convolution_layer, 20, 5, 1, 0)
             net.add(jz.pooling_layer, 'max', 2, 2)
-            net.add(jz.relu_layer)
-            net.add(jz.convolution_layer, 50, 5, 1)
+            net.add(jz.tanh_layer)
+            net.add(jz.convolution_layer, 50, 5, 1, 0)
             net.add(jz.pooling_layer, 'max', 2, 2)
-            net.add(jz.relu_layer)
+            net.add(jz.tanh_layer)
             net.add(jz.inner_product_layer, 500)
-            net.add(jz.relu_layer)
+            net.add(jz.tanh_layer)
             net.add(jz.inner_product_layer, 10)
             net.add(jz.softmax_with_loss_layer, y_batch)
 
