@@ -124,8 +124,8 @@ extern "C" Layer *inner_product_layer(caffe::Blob<float> *bottom, int num_output
 	return layer(new caffe::InnerProductLayer<float>(layer_param), bottom);
 }
 
-/*** Conv Layer ***/
-extern "C" Layer *conv_layer(caffe::Blob<float> *bottom, int num_output, int kernel_size, int stride)
+/*** Convolution Layer ***/
+extern "C" Layer *convolution_layer(caffe::Blob<float> *bottom, int num_output, int kernel_size, int stride)
 {
 	caffe::LayerParameter layer_param;
 	layer_param.set_num_output(num_output);
@@ -133,7 +133,7 @@ extern "C" Layer *conv_layer(caffe::Blob<float> *bottom, int num_output, int ker
 	layer_param.set_stride(stride);
 	layer_param.mutable_weight_filler()->set_type("xavier");
 	layer_param.mutable_bias_filler()->set_type("constant");
-	return layer(new caffe::InnerProductLayer<float>(layer_param), bottom);
+	return layer(new caffe::ConvolutionLayer<float>(layer_param), bottom);
 }
 
 /*** Pooling ***/
@@ -142,11 +142,11 @@ extern "C" Layer *pooling_layer(caffe::Blob<float> *bottom, char *type, int kern
 	caffe::LayerParameter_PoolMethod itype;
 	caffe::LayerParameter layer_param;
 
-	if (strcmp(type, "max")) {
+	if (strcmp(type, "max") == 0) {
 		itype = caffe::LayerParameter_PoolMethod_MAX;
-	} else if (strcmp(type, "ave")) {
+	} else if (strcmp(type, "ave") == 0) {
 		itype = caffe::LayerParameter_PoolMethod_AVE;
-	} else if (strcmp(type, "stochastic")) {
+	} else if (strcmp(type, "stochastic") == 0) {
 		itype = caffe::LayerParameter_PoolMethod_STOCHASTIC;
 	} else {
 		assert(0);
