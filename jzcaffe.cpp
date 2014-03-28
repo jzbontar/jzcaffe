@@ -2,6 +2,13 @@
 #include "caffe/caffe.hpp"
 #include "caffe/util/math_functions.hpp"
 
+/*** util ***/
+extern "C" void deviceSynchronize()
+{
+	cudaDeviceSynchronize();
+}
+
+
 /*** Blob ***/
 extern "C" caffe::Blob<float> *blob(int num, int channels, int height, int width)
 {
@@ -24,12 +31,23 @@ extern "C" void blob_print(caffe::Blob<float> *blob)
 	}
 }
 
+extern "C" void blob_host2device(caffe::Blob<float> *blob, float *host_data)
+{
+	float *device_data = blob->mutable_gpu_data();
+	cudaMemcpy(device_data, host_data, sizeof(float) * blob->count(), cudaMemcpyHostToDevice);
+}
+
+extern "C" void blob_device2host(caffe::Blob<float> *blob, float *host_data)
+{
+	float *device_data = blob->mutable_gpu_data();
+	cudaMemcpy(host_data, device_data, sizeof(float) * blob->count(), cudaMemcpyDeviceToHost);
+}
+
 extern "C" int blob_num(caffe::Blob<float> *blob) { return blob->num(); }
 extern "C" int blob_channels(caffe::Blob<float> *blob) { return blob->channels(); }
 extern "C" int blob_height(caffe::Blob<float> *blob) { return blob->height(); }
 extern "C" int blob_width(caffe::Blob<float> *blob) { return blob->width(); }
 extern "C" int blob_count(caffe::Blob<float> *blob) { return blob->count(); }
-extern "C" float *blob_cpu_data(caffe::Blob<float> *blob) { return blob->mutable_cpu_data(); }
 
 /*** Layer ***/
 struct Layer {
