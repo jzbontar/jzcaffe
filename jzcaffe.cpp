@@ -7,7 +7,7 @@ __attribute__((constructor)) void init() {
 }
 
 /*** util ***/
-extern "C" void deviceSynchronize()
+extern "C" void device_synchronize()
 {
 	cudaDeviceSynchronize();
 }

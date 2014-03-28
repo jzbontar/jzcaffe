@@ -1,7 +1,7 @@
 from ctypes import CDLL, c_int, c_int64, c_float, c_void_p, py_object, pythonapi
 import numpy as np
 
-jz = CDLL('./libjzcaffe.so')
+jz = CDLL('/home/jure/devel/jzcaffe/libjzcaffe.so')
 jz.layer_update_parameters.argtypes = [c_void_p, c_float]
 jz.blob_host2device.argtypes = [c_void_p, np.ctypeslib.ndpointer(dtype=np.float32, flags='C'), c_int]
 jz.blob_device2host.argtypes = [c_void_p, np.ctypeslib.ndpointer(dtype=np.float32, flags='C'), c_int]
@@ -22,8 +22,8 @@ class Sequential:
         return out
     
     def backward(self):
-        for layer in self.layers[::-1]:
-            jz.layer_backward(layer, 1)
+        for i in range(len(self.layers) - 1, -1, -1):
+            jz.layer_backward(self.layers[i], i > 0)
     
     def update_parameters(self, learning_rate):
         for layer in self.layers:
@@ -31,7 +31,7 @@ class Sequential:
     
 
 if __name__ == '__main__':
-    action = 'mlp'
+    action = 'mnist'
 
     if action == 'foo':
         import pyprof
@@ -39,7 +39,7 @@ if __name__ == '__main__':
         input = jz.blob(128,3,100,100)
         labels = jz.blob(128,1,1,1)
 
-        net = jz.conv_layer(input, 96, 11, 1)
+        net = jz.convolution_layer(input, 96, 11, 1)
         jz.layer_forward(net)
         jz.layer_backward(net, True)
 
@@ -64,26 +64,49 @@ if __name__ == '__main__':
 
         #net.forward()
 
-    if action == 'mlp':
+    if action == 'mnist':
         import sys
         import pydatasets
-
-        learning_rate = 0.1
-        batch_size = 128
 
         X, y = pydatasets.mnist()
         X.resize(70000, 1, 28, 28)
 
-        x_batch = jz.blob(batch_size, 1, 28, 28)
-        y_batch = jz.blob(batch_size, 1, 1, 1)
+        model = 'conv'
+
+        if model == 'mlp':
+            learning_rate = 0.2
+            learning_rate_decay = 0.99999
+            batch_size = 500
+
+            x_batch = jz.blob(batch_size, 1, 28, 28)
+            y_batch = jz.blob(batch_size, 1, 1, 1)
+
+            net = Sequential(x_batch)
+            net.add(jz.inner_product_layer, 500)
+            net.add(jz.tanh_layer)
+            net.add(jz.inner_product_layer, 10)
+            net.add(jz.softmax_with_loss_layer, y_batch)
+        elif model == 'conv':
+            learning_rate = 0.1
+            learning_rate_decay = 1
+            batch_size = 64
+
+            x_batch = jz.blob(batch_size, 1, 28, 28)
+            y_batch = jz.blob(batch_size, 1, 1, 1)
+
+            net = Sequential(x_batch)
+            net.add(jz.convolution_layer, 20, 5, 1)
+            net.add(jz.pooling_layer, 'max', 2, 2)
+            net.add(jz.relu_layer)
+            net.add(jz.convolution_layer, 50, 5, 1)
+            net.add(jz.pooling_layer, 'max', 2, 2)
+            net.add(jz.relu_layer)
+            net.add(jz.inner_product_layer, 500)
+            net.add(jz.relu_layer)
+            net.add(jz.inner_product_layer, 10)
+            net.add(jz.softmax_with_loss_layer, y_batch)
+
         net_output = np.empty((batch_size, 10), dtype=np.float32)
-
-        net = Sequential(x_batch)
-        net.add(jz.inner_product_layer, 800)
-        net.add(jz.tanh_layer)
-        net.add(jz.inner_product_layer, 10)
-        net.add(jz.softmax_with_loss_layer, y_batch)
-
         for epoch in range(1000):
             # train
             for i in range(0, 60000 - batch_size, batch_size):
@@ -93,6 +116,7 @@ if __name__ == '__main__':
                 net.forward()
                 net.backward()
                 net.update_parameters(learning_rate)
+                learning_rate *= learning_rate_decay
                 
             # test
             err = 0
@@ -105,4 +129,4 @@ if __name__ == '__main__':
                 jz.blob_device2host(out_blob, net_output, 0)
                 err += np.sum(np.argmax(net_output, axis=1) != y[i:i + batch_size])
 
-            print '{:3d} {}'.format(epoch, err)
+            print '{:3d} {} {}'.format(epoch, err, learning_rate)
